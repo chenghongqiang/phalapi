@@ -14,6 +14,10 @@ class ComposerStaticInit6835957bc29912b8a4cd2dd758af2e80
     );
 
     public static $prefixLengthsPsr4 = array (
+        'V' => 
+        array (
+            'V1\\' => 3,
+        ),
         'P' => 
         array (
             'PhalApi\\Task\\' => 13,
@@ -33,6 +37,10 @@ class ComposerStaticInit6835957bc29912b8a4cd2dd758af2e80
     );
 
     public static $prefixDirsPsr4 = array (
+        'V1\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src/v1',
+        ),
         'PhalApi\\Task\\' => 
         array (
             0 => __DIR__ . '/..' . '/phalapi/task/src',

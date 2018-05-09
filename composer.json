@@ -26,7 +26,8 @@
             "src/app/functions.php"
             ],
         "psr-4": {
-            "App\\": "src/app"
+            "App\\": "src/app",
+                    "V1\\": "src/v1"
         }
     }
 
