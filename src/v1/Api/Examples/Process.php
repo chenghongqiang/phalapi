@@ -16,6 +16,15 @@ class Process extends Api{
      * @return int 父进程号
      */
     public function index(){
+        register_shutdown_function("catch_error");
+        pcntl_signal(SIGTERM, "sig_handler");
+        pcntl_signal(SIGHUP, "sig_handler");
+        pcntl_signal(SIGINT, "sig_handler");
+        pcntl_signal(SIGQUIT, "sig_handler");
+        pcntl_signal(SIGILL, "sig_handler");
+        pcntl_signal(SIGPIPE, "sig_handler");
+        pcntl_signal(SIGALRM, "sig_handler");
+
         $parentPid = posix_getpid();
         echo "parent progress pid:{$parentPid}\n";
         $childList = array();
@@ -40,7 +49,28 @@ class Process extends Api{
         // 等待子进程结束
         pcntl_wait($status);
         echo "({$parentPid})main progress end!";
-        return $parentPid;
+    }
+
+    private function catch_error(){
+        global $is_end;
+        $time = date('Y-m-d H:i:s');
+        $error = error_get_last();
+        $msg = "$time [error]";
+        if($is_end){
+            $msg .= "is_end[yes]";
+        }else{
+            $msg .= "is_end[no]";
+        }
+        if($error){
+            $msg .= var_export($error,1);
+        }
+        echo $msg."\r\n";
+    }
+
+    private function sig_handler($signo){
+        $time = date('Y-m-d H:i:s');
+        echo $time." exit  signo[{$signo}]\r\n";
+        exit("");
     }
 
 }
