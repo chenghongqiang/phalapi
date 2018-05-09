@@ -13,7 +13,7 @@ return array(
      * 应用接口层的统一参数
      */
     'apiCommonRules' => array(
-        'sign' => array('name' => 'sign', 'require' => true),
+        //'sign' => array('name' => 'sign', 'require' => true),
     ),
 
     /**
