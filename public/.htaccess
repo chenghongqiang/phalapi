@@ -1,0 +1,17 @@
+ Options +FollowSymLinks -Indexes
+ IndexIgnore */*
+ RewriteEngine on
+ 
+ # if a directory or a file exists, use it directly
+ RewriteCond %{REQUEST_FILENAME} !-f
+ RewriteCond %{REQUEST_FILENAME} !-d
+
+ # otherwise forward it to index.php
+ RewriteRule . index.php
+ 
+ 
+ #RewriteRule ^index.php/question/detail-(\d+).html$ /jinfuzi-php/index.php/question/detail/id/$1 [NC,P,R=301,L]
+ 
+ #RewriteRule ^(.*)/question/detail-(\d+).html$ /jinfuzi-php/index.php/question/detail/id/$1/p/$1 [NC,P,R=301,L]
+
+ #RewriteRule ^(.*)html$ /jinfuzi-php/index.php/question/detail/id/$1 [NC,P,R=301,L]
