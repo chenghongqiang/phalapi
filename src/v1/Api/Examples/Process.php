@@ -11,8 +11,6 @@ use PhalApi\Api;
  */
 class Process extends Api{
 
-    const SHARE_KEY = 1;
-
     /**
      * @desc 父子进程实例
      * @return int 父进程号
@@ -56,13 +54,13 @@ class Process extends Api{
 
         // 3个写进程
         for ($i = 0; $i < 3; $i ++ ) {
-            $pid = $this->createProgress('msgProducer');
+            $pid = $this->createProgress('msgProducer', $msgQueue);
             $childList[$pid] = 1;
             echo "create producer child progress: {$pid} \n";
         }
         // 2个写进程
         for ($i = 0; $i < 2; $i ++ ) {
-            $pid = $this->createProgress('msgConsumer');
+            $pid = $this->createProgress('msgConsumer', $msgQueue);
             $childList[$pid] = 1;
             echo "create consumer child progress: {$pid} \n";
         }
@@ -78,8 +76,8 @@ class Process extends Api{
     }
 
     // 生产者
-    private function msgProducer(){
-        global $msgQueue;
+    private function msgProducer($msgQueue){
+
         $pid = posix_getpid();
         $repeatNum = 5;
         for ( $i = 1; $i <= $repeatNum; $i++) {
@@ -91,8 +89,8 @@ class Process extends Api{
     }
 
     // 消费者
-    private function msgConsumer(){
-        global $msgQueue;
+    private function msgConsumer($msgQueue){
+
         $pid = posix_getpid();
         $repeatNum = 6;
         for ( $i = 1; $i <= $repeatNum; $i++) {
@@ -123,7 +121,7 @@ class Process extends Api{
 
         // 3个写进程
         for ($i = 0; $i < 3; $i ++ ) {
-            $pid = $this->createProgress('semProducer');
+            $pid = $this->createProgress('semProducer', $shareMemory, $signal);
             $childList[$pid] = 1;
             echo "create producer child progress: {$pid} \n";
         }
@@ -166,35 +164,35 @@ class Process extends Api{
     }
 
     // 生产者
-    private function semProducer(){
-        global $shareMemory;
-        global $signal;
+    private function semProducer(...$param){
+        $args = func_get_arg($param);
+        $SHARE_KEY = 1;
         $pid = posix_getpid();
         $repeatNum = 5;
         for ( $i = 1; $i <= $repeatNum; $i++) {
             // 获得信号量
-            sem_acquire($signal);
+            sem_acquire($args[1]);
 
-            if (shm_has_var($shareMemory,self::SHARE_KEY)){
+            if (shm_has_var($args[0],$SHARE_KEY)){
                 // 有值,加一
-                $count = shm_get_var($shareMemory,self::SHARE_KEY);
+                $count = shm_get_var($args[0],$SHARE_KEY);
                 $count ++;
-                shm_put_var($shareMemory,self::SHARE_KEY,$count);
+                shm_put_var($args[0],$SHARE_KEY,$count);
                 echo "({$pid}) count: {$count}\n";
             }else{
                 // 无值,初始化
-                shm_put_var($shareMemory,self::SHARE_KEY,0);
+                shm_put_var($args[0],$SHARE_KEY,0);
                 echo "({$pid}) count: 0\n";
             }
             // 用完释放
-            sem_release($signal);
+            sem_release($args[1]);
 
             $rand = rand(1,3);
             sleep($rand);
         }
     }
 
-    private function createProgress($callback){
+    private function createProgress($callback, ...$param){
         $pid = pcntl_fork();
         if ( $pid == -1) {
             // 创建失败
@@ -202,7 +200,8 @@ class Process extends Api{
         } else if ($pid == 0) {
             // 子进程执行程序
             $pid = posix_getpid();
-            $this->$callback();
+            $this->$callback($param);
+
             exit("({$pid})child progress end!\n");
         }else{
             // 父进程执行程序
