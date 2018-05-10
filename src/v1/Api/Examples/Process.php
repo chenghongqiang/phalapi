@@ -202,7 +202,7 @@ class Process extends Api{
         } else if ($pid == 0) {
             // 子进程执行程序
             $pid = posix_getpid();
-            $callback();
+            $this->$callback();
             exit("({$pid})child progress end!\n");
         }else{
             // 父进程执行程序
