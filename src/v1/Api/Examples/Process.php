@@ -119,6 +119,11 @@ class Process extends Api{
 
     }
 
+    /**
+     * 信号量与共享内存
+     * @desc 进程间通信方式——信号量与共享内存。<br>信号量是系统提供的一种原子操作，一个信号量同时只有一个进程能操作。一个进程获得了某个信号量，就必须被该进程释放掉
+        <br>共享内存是系统内存中开辟的一块公共内存区域，任何一个进程都可以访问，在同一时刻，可以有多个进程访问该区域，为了保存数据的一致性，需要对该内存区域加锁或信号量
+     */
     public function sem(){
 
         $parentPid = posix_getpid();
@@ -196,7 +201,31 @@ class Process extends Api{
 
     }
 
-    public function catch_error(){
+    /**
+     * 信号
+     * @desc 进程间通信方式——信号。<br>信号是一种系统调用
+     */
+    public function signal() {
+
+    }
+
+    /**
+     * 管道
+     * @desc 进程间通信方式——管道。<br>管道分为无名管道和有名管道，无名管道只能用于具有亲缘关系的进行恒建通信，而有名管道可以用于同一主机上的任意进程
+     */
+    public function pipe() {
+
+    }
+
+    /**
+     * 套接字
+     * @desc 进程间通信方式——套接字socket
+     */
+    public function socket() {
+
+    }
+
+    private function catch_error(){
         global $is_end;
         $time = date('Y-m-d H:i:s');
         $error = error_get_last();
@@ -212,7 +241,7 @@ class Process extends Api{
         echo $msg."\r\n";
     }
 
-    public function sig_handler($signo){
+    private function sig_handler($signo){
         $time = date('Y-m-d H:i:s');
         echo $time." exit  signo[{$signo}]\r\n";
         exit("");
