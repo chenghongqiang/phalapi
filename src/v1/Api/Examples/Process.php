@@ -11,6 +11,9 @@ use PhalApi\Api;
  */
 class Process extends Api{
 
+    private $msgQueue;
+
+
     /**
      * @desc 父子进程实例
      * @return int 父进程号
@@ -50,17 +53,17 @@ class Process extends Api{
 
         $childList = array();
         $id = ftok(__FILE__, 'm');
-        $msgQueue = msg_get_queue($id);
+        $this->msgQueue = msg_get_queue($id);
 
         // 3个写进程
         for ($i = 0; $i < 3; $i ++ ) {
-            $pid = $this->createProgress('msgProducer', $msgQueue);
+            $pid = $this->createProgress('msgProducer');
             $childList[$pid] = 1;
             echo "create producer child progress: {$pid} \n";
         }
         // 2个写进程
         for ($i = 0; $i < 2; $i ++ ) {
-            $pid = $this->createProgress('msgConsumer', $msgQueue);
+            $pid = $this->createProgress('msgConsumer');
             $childList[$pid] = 1;
             echo "create consumer child progress: {$pid} \n";
         }
@@ -76,13 +79,13 @@ class Process extends Api{
     }
 
     // 生产者
-    private function msgProducer($msgQueue){
+    private function msgProducer(){
 
         $pid = posix_getpid();
         $repeatNum = 5;
         for ( $i = 1; $i <= $repeatNum; $i++) {
             $str = "({$pid})progress create! {$i}";
-            msg_send($msgQueue,1,$str);
+            msg_send($this->msgQueue,1,$str);
             $rand = rand(1,3);
             sleep($rand);
         }
@@ -94,7 +97,7 @@ class Process extends Api{
         $pid = posix_getpid();
         $repeatNum = 6;
         for ( $i = 1; $i <= $repeatNum; $i++) {
-            $rel = msg_receive($msgQueue,1,$msgType,1024,$message);
+            $rel = msg_receive($this->msgQueue,1,$msgType,1024,$message);
             echo "{$message} | consumer({$pid}) destroy \n";
             $rand = rand(1,3);
             sleep($rand);
