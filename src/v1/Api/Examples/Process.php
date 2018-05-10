@@ -54,57 +54,15 @@ class Process extends Api{
         $id = ftok(__FILE__, 'm');
         $msgQueue = msg_get_queue($id);
 
-        // 生产者
-        function producer(){
-            global $msgQueue;
-            $pid = posix_getpid();
-            $repeatNum = 5;
-            for ( $i = 1; $i <= $repeatNum; $i++) {
-                $str = "({$pid})progress create! {$i}";
-                msg_send($msgQueue,1,$str);
-                $rand = rand(1,3);
-                sleep($rand);
-            }
-        }
-
-        // 消费者
-        function consumer(){
-            global $msgQueue;
-            $pid = posix_getpid();
-            $repeatNum = 6;
-            for ( $i = 1; $i <= $repeatNum; $i++) {
-                $rel = msg_receive($msgQueue,1,$msgType,1024,$message);
-                echo "{$message} | consumer({$pid}) destroy \n";
-                $rand = rand(1,3);
-                sleep($rand);
-            }
-        }
-
-        function createProgress($callback){
-            $pid = pcntl_fork();
-            if ( $pid == -1) {
-                // 创建失败
-                exit("fork progress error!\n");
-            } else if ($pid == 0) {
-                // 子进程执行程序
-                $pid = posix_getpid();
-                $callback();
-                exit("({$pid})child progress end!\n");
-            }else{
-                // 父进程执行程序
-                return $pid;
-            }
-        }
-
         // 3个写进程
         for ($i = 0; $i < 3; $i ++ ) {
-            $pid = createProgress('producer');
+            $pid = $this->createProgress('msgProducer');
             $childList[$pid] = 1;
             echo "create producer child progress: {$pid} \n";
         }
         // 2个写进程
         for ($i = 0; $i < 2; $i ++ ) {
-            $pid = createProgress('consumer');
+            $pid = $this->createProgress('msgConsumer');
             $childList[$pid] = 1;
             echo "create consumer child progress: {$pid} \n";
         }
@@ -117,6 +75,32 @@ class Process extends Api{
         }
         echo "({$parentPid})main progress end!\n";
 
+    }
+
+    // 生产者
+    private function msgProducer(){
+        global $msgQueue;
+        $pid = posix_getpid();
+        $repeatNum = 5;
+        for ( $i = 1; $i <= $repeatNum; $i++) {
+            $str = "({$pid})progress create! {$i}";
+            msg_send($msgQueue,1,$str);
+            $rand = rand(1,3);
+            sleep($rand);
+        }
+    }
+
+    // 消费者
+    private function msgConsumer(){
+        global $msgQueue;
+        $pid = posix_getpid();
+        $repeatNum = 6;
+        for ( $i = 1; $i <= $repeatNum; $i++) {
+            $rel = msg_receive($msgQueue,1,$msgType,1024,$message);
+            echo "{$message} | consumer({$pid}) destroy \n";
+            $rand = rand(1,3);
+            sleep($rand);
+        }
     }
 
     /**
@@ -137,53 +121,9 @@ class Process extends Api{
         $shareMemory = shm_attach($shm_id);
         $signal = sem_get($sem_id);
 
-        // 生产者
-        function producer(){
-            global $shareMemory;
-            global $signal;
-            $pid = posix_getpid();
-            $repeatNum = 5;
-            for ( $i = 1; $i <= $repeatNum; $i++) {
-                // 获得信号量
-                sem_acquire($signal);
-
-                if (shm_has_var($shareMemory,self::SHARE_KEY)){
-                    // 有值,加一
-                    $count = shm_get_var($shareMemory,self::SHARE_KEY);
-                    $count ++;
-                    shm_put_var($shareMemory,self::SHARE_KEY,$count);
-                    echo "({$pid}) count: {$count}\n";
-                }else{
-                    // 无值,初始化
-                    shm_put_var($shareMemory,self::SHARE_KEY,0);
-                    echo "({$pid}) count: 0\n";
-                }
-                // 用完释放
-                sem_release($signal);
-
-                $rand = rand(1,3);
-                sleep($rand);
-            }
-        }
-        function createProgress($callback){
-            $pid = pcntl_fork();
-            if ( $pid == -1) {
-                // 创建失败
-                exit("fork progress error!\n");
-            } else if ($pid == 0) {
-                // 子进程执行程序
-                $pid = posix_getpid();
-                $callback();
-                exit("({$pid})child progress end!\n");
-            }else{
-                // 父进程执行程序
-                return $pid;
-            }
-        }
-
         // 3个写进程
         for ($i = 0; $i < 3; $i ++ ) {
-            $pid = createProgress('producer');
+            $pid = $this->createProgress('semProducer');
             $childList[$pid] = 1;
             echo "create producer child progress: {$pid} \n";
         }
@@ -223,6 +163,51 @@ class Process extends Api{
      */
     public function socket() {
 
+    }
+
+    // 生产者
+    private function semProducer(){
+        global $shareMemory;
+        global $signal;
+        $pid = posix_getpid();
+        $repeatNum = 5;
+        for ( $i = 1; $i <= $repeatNum; $i++) {
+            // 获得信号量
+            sem_acquire($signal);
+
+            if (shm_has_var($shareMemory,self::SHARE_KEY)){
+                // 有值,加一
+                $count = shm_get_var($shareMemory,self::SHARE_KEY);
+                $count ++;
+                shm_put_var($shareMemory,self::SHARE_KEY,$count);
+                echo "({$pid}) count: {$count}\n";
+            }else{
+                // 无值,初始化
+                shm_put_var($shareMemory,self::SHARE_KEY,0);
+                echo "({$pid}) count: 0\n";
+            }
+            // 用完释放
+            sem_release($signal);
+
+            $rand = rand(1,3);
+            sleep($rand);
+        }
+    }
+
+    private function createProgress($callback){
+        $pid = pcntl_fork();
+        if ( $pid == -1) {
+            // 创建失败
+            exit("fork progress error!\n");
+        } else if ($pid == 0) {
+            // 子进程执行程序
+            $pid = posix_getpid();
+            $callback();
+            exit("({$pid})child progress end!\n");
+        }else{
+            // 父进程执行程序
+            return $pid;
+        }
     }
 
     private function catch_error(){
